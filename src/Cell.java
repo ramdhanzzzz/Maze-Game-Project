@@ -9,11 +9,9 @@ public class Cell implements Comparable<Cell> {
     boolean visited = false;
     Cell parent;
 
-    // --- WEIGHTED GRAPH PROPERTIES ---
     // 0=Default, 1=Grass, 5=Mud, 10=Water
     int terrainCost;
 
-    // Pathfinding vars
     double g = Double.POSITIVE_INFINITY;
     double h = 0;
     double f = Double.POSITIVE_INFINITY;
@@ -25,7 +23,7 @@ public class Cell implements Comparable<Cell> {
         this.col = col;
         this.row = row;
         this.size = size;
-        this.terrainCost = 0; // Default Terrace (Cost 0)
+        this.terrainCost = 0; 
     }
 
     @Override
@@ -38,7 +36,6 @@ public class Cell implements Comparable<Cell> {
         int y = row * size;
         Color terrainColor;
 
-        // STEP 3: Visualisasi Terrain
         if (terrainCost == 0) terrainColor = new Color(105, 105, 105);    // Default Terrace (Dim Gray)
         else if (terrainCost == 1) terrainColor = new Color(60, 179, 113); // Grass (Medium Sea Green)
         else if (terrainCost == 5) terrainColor = new Color(205, 133, 63); // Mud (Peru Brown)
