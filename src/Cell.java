@@ -11,7 +11,6 @@ public class Cell implements Comparable<Cell> {
 
     // 0=Default, 1=Grass, 5=Mud, 10=Water
     int terrainCost;
-
     double g = Double.POSITIVE_INFINITY;
     double h = 0;
     double f = Double.POSITIVE_INFINITY;
