@@ -11,7 +11,6 @@ public class MazeGame extends JPanel {
     public final int PAN_WIDTH = COLS * TILE_SIZE;
     public final int PAN_HEIGHT = ROWS * TILE_SIZE;
 
-    // Visual Colors
     private final Color START_COLOR = new Color(50, 255, 50);
     private final Color END_COLOR = new Color(255, 50, 50);
     private final Color HEAD_COLOR = new Color(255, 255, 0);
@@ -60,37 +59,32 @@ public class MazeGame extends JPanel {
         updateStatus("Map Ready.", Color.WHITE);
         updateScoreUI();
 
-        // 1. Init Grid
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
                 grid.add(new Cell(c, r, TILE_SIZE));
             }
         }
 
-        // 2. STEP 1: Generate Maze using PRIM'S ALGORITHM
         generatePrimsMaze();
 
-        // 3. STEP 3: Assign Weighted Terrains
         assignTerrains();
 
         startCell = grid.get(0);
         endCell = grid.get(grid.size() - 1);
 
-        // Ensure Start/End are walkable (Default/Grass)
         startCell.terrainCost = 0;
         endCell.terrainCost = 0;
         repaint();
     }
 
-    // STEP 3: Random Terrain Generation including Default (0)
     private void assignTerrains() {
         Random rand = new Random();
         for (Cell c : grid) {
             double chance = rand.nextDouble();
-            if (chance < 0.40) c.terrainCost = 0;       // 40% Default Terrace (Cost 0)
-            else if (chance < 0.70) c.terrainCost = 1;  // 30% Grass (Cost 1)
-            else if (chance < 0.90) c.terrainCost = 5;  // 20% Mud (Cost 5)
-            else c.terrainCost = 10;                    // 10% Water (Cost 10)
+            if (chance < 0.40) c.terrainCost = 0;       
+            else if (chance < 0.70) c.terrainCost = 1; 
+            else if (chance < 0.90) c.terrainCost = 5; 
+            else c.terrainCost = 10;                    
         }
     }
 
@@ -113,34 +107,28 @@ public class MazeGame extends JPanel {
         return c + r * COLS;
     }
 
-    // --- STEP 1: PRIM'S ALGORITHM IMPLEMENTATION ---
     private void generatePrimsMaze() {
         ArrayList<Cell> frontier = new ArrayList<>();
         Random rand = new Random();
 
-        // Start with a random cell
         Cell start = grid.get(rand.nextInt(grid.size()));
         start.visited = true;
         frontier.addAll(getPotentialNeighbors(start));
 
         while (!frontier.isEmpty()) {
-            // Pick random cell from frontier
             int randIndex = rand.nextInt(frontier.size());
             Cell current = frontier.remove(randIndex);
 
-            // Find visited neighbors
             ArrayList<Cell> visitedNeighbors = new ArrayList<>();
             for (Cell n : getPotentialNeighbors(current)) {
                 if (n.visited) visitedNeighbors.add(n);
             }
 
             if (!visitedNeighbors.isEmpty()) {
-                // Connect to random visited neighbor
                 Cell connected = visitedNeighbors.get(rand.nextInt(visitedNeighbors.size()));
                 Cell.removeWalls(current, connected);
                 current.visited = true;
 
-                // Add unvisited neighbors to frontier
                 for (Cell n : getPotentialNeighbors(current)) {
                     if (!n.visited && !frontier.contains(n)) {
                         frontier.add(n);
@@ -149,10 +137,8 @@ public class MazeGame extends JPanel {
             }
         }
 
-        // Reset visited for solver
         for (Cell c : grid) c.visited = false;
 
-        // STEP 1: Make Multiple Paths (Loops)
         for (int i = 0; i < (COLS * ROWS * 0.15); i++) {
             Cell c1 = grid.get(rand.nextInt(grid.size()));
             Cell c2 = getRandomNeighbor(c1);
@@ -176,7 +162,6 @@ public class MazeGame extends JPanel {
         return null;
     }
 
-    // GANTI METHOD solveLogic YANG LAMA DENGAN INI
     private void solveLogic(String algo) {
         isSolving = true;
         currentAlgo = algo;
@@ -185,10 +170,8 @@ public class MazeGame extends JPanel {
         finalTotalCost = 0;
         currentCost = 0;
 
-        // Tentukan apakah algoritma ini Unweighted (Tidak peduli lumpur/air)
         boolean isUnweighted = algo.equals("BFS") || algo.equals("DFS");
 
-        // Reset Grid Data
         for(Cell c : grid) {
             c.g = Double.POSITIVE_INFINITY;
             c.f = Double.POSITIVE_INFINITY;
@@ -196,77 +179,59 @@ public class MazeGame extends JPanel {
             c.visited = false;
         }
 
-        // Struktur Data untuk berbagai algoritma
-        Queue<Cell> queue = new LinkedList<>();       // Untuk BFS
-        Stack<Cell> stack = new Stack<>();            // Untuk DFS
-        PriorityQueue<Cell> pq = new PriorityQueue<>(); // Untuk Dijkstra & A*
+        Queue<Cell> queue = new LinkedList<>();  
+        Stack<Cell> stack = new Stack<>();        
+        PriorityQueue<Cell> pq = new PriorityQueue<>(); 
 
-        // Setup Start Node
         startCell.g = 0;
         startCell.visited = true;
 
         if (algo.equals("BFS")) queue.add(startCell);
         else if (algo.equals("DFS")) stack.push(startCell);
         else {
-            // A* pakai heuristic, Dijkstra 0
             startCell.f = algo.equals("A*") ? heuristic(startCell, endCell) : 0;
             pq.add(startCell);
         }
 
         boolean found = false;
 
-        // --- LOOP PENCARIAN (ANIMASI ADA DI SINI) ---
         while (!queue.isEmpty() || !stack.isEmpty() || !pq.isEmpty()) {
             Cell current;
 
-            // 1. Ambil Node berikutnya
             if (algo.equals("BFS")) current = queue.poll();
             else if (algo.equals("DFS")) current = stack.pop();
             else current = pq.poll();
 
-            // Tandai sudah dikunjungi (Visualisasi warna putih transparan)
             visitedSet.add(current);
-            currentHead = current; // Kepala kuning (posisi saat ini)
+            currentHead = current; 
 
-            // Update UI Score secara Realtime
-            // Jika Unweighted, cost = jumlah kotak yg dikunjungi. Jika Weighted, cost = nilai g.
             currentCost = isUnweighted ? visitedSet.size() : current.g;
             updateScoreUI();
-
-            // PENTING: Repaint agar perubahan terlihat di layar
             repaint();
 
-            // Cek Finish
             if (current == endCell) {
                 found = true;
                 break;
             }
 
-            // 2. Ambil Tetangga
             ArrayList<Cell> neighbors = getValidNeighbors(current);
 
-            // Khusus DFS: Shuffle biar jalannya random/seru, kalau tidak dia akan lurus terus
             if (algo.equals("DFS")) Collections.shuffle(neighbors);
 
             for (Cell neighbor : neighbors) {
-                // Hitung Cost per langkah
-                // Jika Unweighted (BFS/DFS), anggap cost tanah = 1 (abaikan lumpur/air)
-                // Jika Weighted, ambil terrainCost asli
                 double moveCost = isUnweighted ? 1 : neighbor.terrainCost;
                 double newG = current.g + moveCost;
 
-                // LOGIKA BFS & DFS (Unweighted)
                 if (isUnweighted) {
                     if (!neighbor.visited) {
                         neighbor.visited = true;
                         neighbor.parent = current;
-                        neighbor.g = newG; // Simpan jarak langkah
+                        neighbor.g = newG; 
 
                         if (algo.equals("BFS")) queue.add(neighbor);
                         else stack.push(neighbor);
                     }
                 }
-                // LOGIKA DIJKSTRA & A* (Weighted)
                 else {
                     if (newG < neighbor.g) {
                         neighbor.g = newG;
@@ -274,24 +239,19 @@ public class MazeGame extends JPanel {
                         neighbor.f = neighbor.g + neighbor.h;
                         neighbor.parent = current;
 
-                        // Refresh Priority Queue
                         pq.remove(neighbor);
                         pq.add(neighbor);
                     }
                 }
             }
 
-            // --- ANIMASI DELAY ---
-            // Thread tidur sebentar agar mata user bisa mengikuti pergerakan
             try {
-                // DFS lebih cepat (10ms) karena jalurnya panjang, BFS/Dijkstra (15ms)
                 Thread.sleep(algo.equals("DFS") ? 10 : 15);
             } catch (Exception e) {}
         }
 
-        // --- SELESAI PENCARIAN ---
         if (found) {
-            reconstructPath(); // Gambar garis path
+            reconstructPath(); 
             isSolved = true;
             updateStatus("FINISHED! (" + algo + ")", Color.GREEN);
         } else {
@@ -299,7 +259,7 @@ public class MazeGame extends JPanel {
         }
 
         isSolving = false;
-        currentHead = null; // Hapus kepala kuning
+        currentHead = null;
         updateScoreUI();
         repaint();
     }
@@ -324,13 +284,9 @@ public class MazeGame extends JPanel {
 
     private void reconstructPath() {
         Cell curr = endCell;
-
-        // Cek apakah algoritma terakhir adalah Unweighted (BFS/DFS)
         boolean isUnweighted = currentAlgo.equals("BFS") || currentAlgo.equals("DFS");
 
         while (curr != startCell && curr != null) {
-            // Jika BFS/DFS: Cost tambah 1 per langkah (Steps)
-            // Jika Dijkstra/A*: Cost tambah sesuai berat tanah (Terrain Cost)
             if (isUnweighted) {
                 finalTotalCost += 1;
             } else {
@@ -381,9 +337,6 @@ public class MazeGame extends JPanel {
         g2d.drawOval(c.col * TILE_SIZE + p, c.row * TILE_SIZE + p, TILE_SIZE - p*2, TILE_SIZE - p*2);
     }
 
-    // ==========================================
-    // MAIN UI SETUP (REVISI DESIGN)
-    // ==========================================
     public static void main(String[] args) {
         JFrame frame = new JFrame("Java Maze Pathfinder");
         frame.setLayout(new BorderLayout());
@@ -392,7 +345,6 @@ public class MazeGame extends JPanel {
         MazeGame gamePanel = new MazeGame();
         frame.add(gamePanel, BorderLayout.CENTER);
 
-        // 1. SETUP SIDEBAR DENGAN GRIDBAGLAYOUT (Agar Center Rapi)
         JPanel sidebar = new JPanel(new GridBagLayout());
         sidebar.setBackground(new Color(50, 50, 50));
         sidebar.setPreferredSize(new Dimension(260, gamePanel.PAN_HEIGHT));
@@ -403,8 +355,6 @@ public class MazeGame extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.weightx = 1.0;
-
-        // --- HEADER ---
         gbc.gridy = 0;
         JLabel titleLabel = new JLabel("CONTROL PANEL", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -413,8 +363,6 @@ public class MazeGame extends JPanel {
 
         gbc.gridy++;
         sidebar.add(Box.createVerticalStrut(10), gbc);
-
-        // --- LEGEND SECTION ---
         gbc.gridy++;
         sidebar.add(createHeaderLabel("Terrain Legend"), gbc);
 
@@ -427,7 +375,6 @@ public class MazeGame extends JPanel {
         gbc.gridy++;
         sidebar.add(legendPanel, gbc);
 
-        // --- STATS SECTION ---
         gbc.gridy++;
         sidebar.add(Box.createVerticalStrut(15), gbc);
 
@@ -447,16 +394,12 @@ public class MazeGame extends JPanel {
 
         gbc.gridy++;
         sidebar.add(statsPanel, gbc);
-
-        // --- STATUS TEXT ---
         gbc.gridy++;
         sidebar.add(Box.createVerticalStrut(10), gbc);
         gamePanel.lblStatus = new JLabel("Ready", SwingConstants.CENTER);
         gamePanel.lblStatus.setForeground(Color.WHITE);
         gamePanel.lblStatus.setFont(new Font("Segoe UI", Font.ITALIC, 14));
         sidebar.add(gamePanel.lblStatus, gbc);
-
-        // --- UNWEIGHTED BUTTONS ---
         gbc.gridy++;
         sidebar.add(Box.createVerticalStrut(15), gbc);
         sidebar.add(createHeaderLabel("Unweighted Search"), gbc);
@@ -470,8 +413,6 @@ public class MazeGame extends JPanel {
         JButton btnDFS = createStyledButton("DFS", new Color(155, 89, 182));
         btnDFS.addActionListener(e -> gamePanel.startSolving("DFS"));
         sidebar.add(btnDFS, gbc);
-
-        // --- WEIGHTED BUTTONS ---
         gbc.gridy++;
         sidebar.add(Box.createVerticalStrut(15), gbc);
         sidebar.add(createHeaderLabel("Weighted Search"), gbc);
@@ -485,12 +426,8 @@ public class MazeGame extends JPanel {
         JButton btnAStar = createStyledButton("A-Star", new Color(192, 57, 43));
         btnAStar.addActionListener(e -> gamePanel.startSolving("A*"));
         sidebar.add(btnAStar, gbc);
-
-        // --- MAZE GENERATION ---
         gbc.gridy++;
         sidebar.add(Box.createVerticalStrut(25), gbc);
-
-        // WARNA HIJAU CERAH UNTUK TOMBOL MAZE
         JButton btnMaze = createStyledButton("Generate New Prim Maze", new Color(39, 174, 96));
         btnMaze.setFont(new Font("Segoe UI", Font.BOLD, 14)); // Font sedikit lebih tebal
         btnMaze.addActionListener(e -> gamePanel.resetMaze());
@@ -502,8 +439,6 @@ public class MazeGame extends JPanel {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
-
-    // --- UI HELPER METHODS ---
 
     private static JLabel createHeaderLabel(String text) {
         JLabel l = new JLabel(text, SwingConstants.CENTER);
@@ -544,9 +479,8 @@ public class MazeGame extends JPanel {
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setBorderPainted(false); // Flat style
+        btn.setBorderPainted(false); 
         btn.setOpaque(true);
-        // Trik agar warna muncul di beberapa L&F (Mac/Windows)
         btn.setContentAreaFilled(false);
         btn.setOpaque(true);
         btn.setBorder(BorderFactory.createCompoundBorder(
@@ -554,7 +488,6 @@ public class MazeGame extends JPanel {
                 new EmptyBorder(8, 15, 8, 15)
         ));
 
-        // Custom UI Painter untuk background warna
         btn.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
             @Override
             public void paint(Graphics g, JComponent c) {
