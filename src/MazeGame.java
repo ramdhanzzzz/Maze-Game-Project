@@ -10,7 +10,6 @@ public class MazeGame extends JPanel {
     private final int TILE_SIZE = 25;
     public final int PAN_WIDTH = COLS * TILE_SIZE;
     public final int PAN_HEIGHT = ROWS * TILE_SIZE;
-
     private final Color START_COLOR = new Color(50, 255, 50);
     private final Color END_COLOR = new Color(255, 50, 50);
     private final Color HEAD_COLOR = new Color(255, 255, 0);
